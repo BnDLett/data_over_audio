@@ -1,20 +1,20 @@
-# Data From Sound
-Transfer data (such as text) over sound with Python.
+# Data Over Audio
+Transfer data (such as text) over audible frequency modulation.
 
-# NOTES
-## Readiness
-It is planned to prepare this for a more production-like environment; however, until then, understand that this is
-purely just a proof of concept. 
+## Readiness of this Library
+I wouldn't recommend using this library in an actual production environment. However, if you wish to do so, then all
+power to you. Just be sure that your equipment is capable of accurately receiving and transmitting data. Be sure that
+you incorporate a standard too. This doesn't (yet) automatically adjust based on the frequencies already in the
+environment.
 
 ## Equipment
-Depending on your equipment, you may also have transmission errors. These errors can be
-accounted for via adjusting the values in `__init__.py`; however, don't expect it to remove those transmission errors
-entirely.
+Whenever it comes to equipment, you're going to want something that is frequency accurate and (depending on your
+situation) loud. This is quite necessary if you're expecting fault-free communications.
 
 ## Data transfer rate
 Currently, the lower the rate the better. A rate such as 8-16 bits per second tends to handle decently well. I have had
-issues with 32 bits and 64 bits per second transfer rates. Also, the more data you use, the more error-prone the result.
-There currently isn't an implementation to fix this.
+issues with 32 bits and 64 bits per second transfer rates. Furthermore, the more data you use, the more error-prone the 
+result. There currently isn't an implementation to fix this.
 
 ## Frequency
 The frequency that you use heavily depends on your environment. Just like regular radio, there are frequencies that
