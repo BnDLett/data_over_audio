@@ -13,7 +13,8 @@ from data_over_audio.exceptions import (
 )
 
 from logging import Logger
-from typing import Iterable
+from typing import Iterable, Tuple
+
 
 class DataOverAudio:
     __base_frequency__: int
@@ -50,6 +51,7 @@ class DataOverAudio:
 
 
     # ---- STATIC METHODS ----
+    # -- Utilities --
 
     @staticmethod
     def str_to_bin(text: str) -> str:
@@ -97,6 +99,70 @@ class DataOverAudio:
     @staticmethod
     def within_error(current_value: float, target_value: int, error: float):
         return (target_value - error) <= current_value <= (target_value + error)
+
+
+    # -- Receiving --
+
+    @staticmethod
+    def receive_bit(probing: bool, transmitting_data: bool, base_frequency: int, up_frequency: int, call_frequency: int,
+                    error_margin: int, speed: int) -> tuple[bool, bool, int | None]:
+        target_speed = speed + (((speed * 4) - speed) * probing)
+
+        # print(target_speed)
+
+        sampling_rate = 48000
+        result = DataOverAudio.retrieve_sound(target_speed, sampling_rate)
+        frequency: np.float64 = DataOverAudio.freq(sampling_rate, result, 0, (1 / (target_speed * 2)) * 1000)
+
+        within_call_error = DataOverAudio.within_error(frequency.item(), call_frequency, error_margin)
+
+        print(frequency.item())
+
+        if probing and not within_call_error and not transmitting_data:
+            return True, False, None
+        elif probing and within_call_error and not transmitting_data:
+            return True, True, None
+        elif not probing and transmitting_data and within_call_error:
+            return False, False, None
+
+        result = None
+
+        if DataOverAudio.within_error(frequency.item(), up_frequency, error_margin):
+            result = 1
+        elif DataOverAudio.within_error(frequency.item(), base_frequency, error_margin):
+            result = 0
+
+        # binary_str += '0' if within_error(frequency.item(), base_frequency, error_margin) else '1'
+
+        # binary_list.append(int(within_error(frequency.item(), base_frequency + up_frequency_offset, error_margin)))
+
+        return False, True, result
+        # print(set(sorted(frequencies, key=float)))
+
+    @staticmethod
+    def receive_data_stream(base_frequency: int, up_frequency: int, call_frequency: int, error_margin: int,
+                            speed: int) -> list[int]:
+        binary_list: list[int] = []
+        probe, transmitted_data = True, False
+
+        while probe or transmitted_data:
+            start = time.time()
+            probe, transmitted_data, binary = DataOverAudio.receive_bit(probe, transmitted_data, base_frequency,
+                                                                        up_frequency, call_frequency, error_margin,
+                                                                        speed)
+            end = time.time()
+
+            if binary_list is not None:
+                binary_list.append(binary)
+
+            record_error_margin = end - start
+
+            target_sleep_duration = ((1 / speed) - record_error_margin) * (not probe)
+            sleep_duration = target_sleep_duration if target_sleep_duration >= 0 else 0
+            time.sleep(sleep_duration)
+
+        return binary_list
+
 
     # ---- SETTERS ----
 
@@ -160,52 +226,8 @@ class DataOverAudio:
 
     # -- Receiving --
 
-    def receive_data(self, probing: bool, transmitting_data: bool, binary_list: list) -> tuple[bool, bool, list]:
-        target_speed = self.__speed__ + (((self.__speed__ * 4) - self.__speed__) * probing)
-
-        # print(target_speed)
-
-        sampling_rate = 48000
-        result = self.retrieve_sound(target_speed, sampling_rate)
-        frequency: np.float64 = self.freq(sampling_rate, result, 0, (1 / (target_speed * 2)) * 1000)
-
-        within_call_error = self.within_error(frequency.item(), self.CALL_FREQUENCY, self.__error_margin__)
-
-        print(frequency.item())
-
-        if probing and not within_call_error and not transmitting_data:
-            return True, False, binary_list
-        elif probing and within_call_error and not transmitting_data:
-            return True, True, binary_list
-        elif not probing and transmitting_data and within_call_error:
-            return False, False, binary_list
-
-        if self.within_error(frequency.item(), self.UP_FREQUENCY, self.__error_margin__):
-            binary_list.append(1)
-        elif self.within_error(frequency.item(), self.__base_frequency__, self.__error_margin__):
-            binary_list.append(0)
-
-        # binary_str += '0' if within_error(frequency.item(), base_frequency, error_margin) else '1'
-
-        # binary_list.append(int(within_error(frequency.item(), base_frequency + up_frequency_offset, error_margin)))
-
-        return False, True, binary_list
-        # print(set(sorted(frequencies, key=float)))
-
     def receive(self) -> list[int]:
-        probe = True
-        binary: list[int] = []
-        transmitted_data = False
-
-        while probe or transmitted_data:
-            start = time.time()
-            probe, transmitted_data, binary = self.receive_data(probe, transmitted_data, binary)
-            end = time.time()
-
-            record_error_margin = end - start
-
-            target_sleep_duration = ((1 / self.__speed__) - record_error_margin) * (not probe)
-            sleep_duration = target_sleep_duration if target_sleep_duration >= 0 else 0
-            time.sleep(sleep_duration)
+        binary: list[int] = self.receive_data_stream(self.__base_frequency__, self.UP_FREQUENCY, self.CALL_FREQUENCY,
+                                                     self.__error_margin__, self.__speed__)
 
         return binary
