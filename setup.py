@@ -3,7 +3,7 @@ from setuptools import setup
 setup(
     name='discord-py-api',
     py_scipts=['data_over_audio'],
-    version='0.3.0',
+    version='0.3.1',
     description='A library for transmitting data over audio via frequency modulation.',
     author='Lett',
     install_requires=[

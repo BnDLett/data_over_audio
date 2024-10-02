@@ -13,7 +13,7 @@ from data_over_audio.exceptions import (
 )
 
 from logging import Logger
-from typing import Iterable, Tuple
+from typing import Iterable
 
 
 class DataOverAudio:
@@ -49,13 +49,12 @@ class DataOverAudio:
         self.UP_FREQUENCY = base_frequency + frequency_step
         self.CALL_FREQUENCY = self.UP_FREQUENCY + frequency_step
 
-
     # ---- STATIC METHODS ----
     # -- Utilities --
 
     @staticmethod
     def str_to_bin(text: str) -> str:
-        return ''.join(format(ord(x), 'b').rjust(8, "0") for x in text)
+        return ''.join(format(ord(i), '08b') for i in text)
 
     @staticmethod
     def play_binary(base_frequency: int, speed: int, binary: Iterable, offset: int = 200) -> None:
@@ -100,7 +99,6 @@ class DataOverAudio:
     def within_error(current_value: float, target_value: int, error: float):
         return (target_value - error) <= current_value <= (target_value + error)
 
-
     # -- Receiving --
 
     @staticmethod
@@ -116,7 +114,7 @@ class DataOverAudio:
 
         within_call_error = DataOverAudio.within_error(frequency.item(), call_frequency, error_margin)
 
-        print(frequency.item())
+        # print(frequency.item())
 
         if probing and not within_call_error and not transmitting_data:
             return True, False, None
@@ -163,7 +161,6 @@ class DataOverAudio:
 
         return binary_list
 
-
     # ---- SETTERS ----
 
     def set_base_frequency(self, new_value: int):
@@ -180,11 +177,12 @@ class DataOverAudio:
 
     def set_error_margin(self, new_value: int):
         if new_value > (self.__frequency_step__ / 2):
-            return ValueError(f"The error margin provided is too large. Maximum allowed is {self.__frequency_step__ / 2} Hz."
-                              f" If you wish to increase the error margin, then increase your frequency step.")
+            return ValueError(
+                f"The error margin provided is too large. Maximum allowed is {self.__frequency_step__ / 2} Hz."
+                f" If you wish to increase the error margin, then increase your frequency step.")
         elif new_value < 0:
             return NegativeValue("The error margin that was provided is a negative number.")
-        
+
         self.__error_margin__ = new_value
 
     def set_speed(self, new_value: int):
@@ -192,7 +190,6 @@ class DataOverAudio:
             return NegativeValue("The error margin that was provided is a negative number.")
 
         self.__speed__ = new_value
-
 
     # ---- GETTERS ----
 
@@ -208,12 +205,11 @@ class DataOverAudio:
     def get_speed(self) -> int:
         return self.__speed__
 
-
     # ---- NON-STATIC METHODS ----
     # -- Transmitting --
 
     def transmit(self, binary: Iterable) -> None:
-        pysine.sine(0, 2)  # Warm up the program.
+        pysine.sine(0, 0.5)  # Warm up the program.
 
         pysine.sine(self.CALL_FREQUENCY, 1 / self.__speed__)
         self.play_binary(self.__base_frequency__, self.__speed__, binary, self.__frequency_step__)
@@ -222,7 +218,6 @@ class DataOverAudio:
     def transmit_text(self, text: str):
         binary_text = self.str_to_bin(text)
         self.transmit(binary_text)
-
 
     # -- Receiving --
 
