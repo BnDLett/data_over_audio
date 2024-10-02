@@ -55,7 +55,7 @@ class DataOverAudio:
 
     @staticmethod
     def str_to_bin(text: str) -> str:
-        return ''.join(format(ord(x), 'b') for x in text)
+        return ''.join(format(ord(x), 'b').rjust(8, "0") for x in text)
 
     @staticmethod
     def play_binary(base_frequency: int, speed: int, binary: Iterable, offset: int = 200) -> None:
@@ -152,7 +152,7 @@ class DataOverAudio:
                                                                         speed)
             end = time.time()
 
-            if binary_list is not None:
+            if binary is not None:
                 binary_list.append(binary)
 
             record_error_margin = end - start
