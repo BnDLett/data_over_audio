@@ -15,6 +15,8 @@ from data_over_audio.exceptions import (
 from logging import Logger
 from typing import Iterable
 
+# Lorem
+
 
 class DataOverAudio:
     __base_frequency__: int
